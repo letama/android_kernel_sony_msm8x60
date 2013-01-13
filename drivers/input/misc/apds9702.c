@@ -79,6 +79,7 @@ static int apds9702_do_sensing(struct apds9702data *data, int enable)
 {
 	int err = 0;
 	struct apds9702_platform_data *pdata = data->client->dev.platform_data;
+	printk("PL:apds9702_do_sensing(%d)\n", enable);
 
 	dev_dbg(&data->client->dev, "%s: enable = %d\n", __func__, enable);
 	if (enable) {
@@ -112,6 +113,7 @@ static irqreturn_t apds9702_work(int irq, void *handle)
 	if (data->active) {
 		int d = gpio_get_value(pdata->gpio_dout);
 		dev_dbg(&data->client->dev, "%s: gpio = %d\n", __func__, d);
+		printk("PL:*********  apds9702_work reports: %d ***********\n", d == DOUT_VALUE_IF_DETECTED);
 		input_report_abs(data->input_dev, ABS_DISTANCE,
 				 d == DOUT_VALUE_IF_DETECTED ? 0 : 255);
 		input_sync(data->input_dev);
@@ -296,6 +298,7 @@ static int apds9702_device_open(struct input_dev *dev)
 {
 	struct apds9702data *data = input_get_drvdata(dev);
 	int rc;
+	printk("PL:apds9702_device_open\n");
 	mutex_lock(&data->lock);
 	rc = apds9702_do_sensing(data, 1);
 	mutex_unlock(&data->lock);
@@ -309,6 +312,7 @@ static void apds9702_device_close(struct input_dev *dev)
 {
 	struct apds9702data *data = input_get_drvdata(dev);
 	int rc;
+	printk("PL:apds9702_device_close\n");
 	mutex_lock(&data->lock);
 	rc = apds9702_do_sensing(data, 0);
 	mutex_unlock(&data->lock);
@@ -441,6 +445,8 @@ static int apds9702_remove(struct i2c_client *client)
 {
 	struct apds9702_platform_data *pdata = client->dev.platform_data;
 	struct apds9702data *data = i2c_get_clientdata(client);
+
+	printk("PL:apds9702_remove\n");
 
 	remove_sysfs_interfaces(&client->dev);
 	free_irq(data->interrupt, data);
