@@ -226,6 +226,11 @@ static int led_resume(struct device *dev)
  */
 int led_classdev_register(struct device *parent, struct led_classdev *led_cdev)
 {
+
+  if(strcmp(led_cdev->name, "lcd-backlight") == 0) {
+    printk("PL: registering a lcd-backlight\n");
+    dump_stack();
+  }
 	led_cdev->dev = device_create(leds_class, parent, 0, led_cdev,
 				      "%s", led_cdev->name);
 	if (IS_ERR(led_cdev->dev))

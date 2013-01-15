@@ -2427,7 +2427,7 @@ static struct msm_i2c_ssbi_platform_data msm_ssbi3_pdata = {
 #define MSM_FB_EXT_BUF_SIZE \
 		(roundup((720 * 576 * 2), 4096) * 2) /* 2 bpp x 2 pages */
 #else
-#define MSM_FB_EXT_BUFT_SIZE	0
+#define MSM_FB_EXT_BUF_SIZE	0
 #endif
 
 /* Note: must be multiple of 4096 */
@@ -7313,6 +7313,7 @@ static int r63306_lcd_power(int on)
 {
 	static int curr_power;
 	int rc;
+	printk("PL:board fuji:r63306_lcd_power()\n");
 
 	if (curr_power == on)
 		return 0;
@@ -7329,6 +7330,7 @@ static int r63306_lcd_power(int on)
 
 	if (!rc)
 		curr_power = on;
+	printk("PL:board fuji:r63306_lcd_power, ret = %d\n", rc);
 
 	return rc;
 }
@@ -7379,6 +7381,7 @@ out_pwr:
 
 static int lcd_power(int on)
 {
+  printk("PL:board-semc_fuji.c, lcd_power(%d)\n", on);
 	if (on)
 		gpio_set_value(LCD_PWR_EN, 1);
 	else
@@ -7460,6 +7463,8 @@ static int mipi_dsi_power(int on)
 	static int curr_power;
 	static struct regulator *ldo0;
 	int rc;
+
+	printk("PL:mipi_dsi_power(%d)\n", on);
 
 	if (curr_power == on)
 		return 0;
@@ -7660,8 +7665,10 @@ static void __init msm_fb_add_devices(void)
 #ifdef CONFIG_FB_MSM_LCDC_DSUB
 	mdp_pdata.mdp_max_clk = 200000000;
 #endif
+	printk("PL:msm_fb_add_devices(), register mdp\n");
 	msm_fb_register_device("mdp", &mdp_pdata);
 
+	printk("PL:msm_fb_add_devices(), register mipi dsi\n");
 	msm_fb_register_device("mipi_dsi", &mipi_dsi_pdata);
 #ifdef CONFIG_MSM_BUS_SCALING
 	if (hdmi_is_primary)
@@ -7673,6 +7680,7 @@ static void __init msm_fb_add_devices(void)
 	msm_fb_register_device("tvenc", &atv_pdata);
 	msm_fb_register_device("tvout_device", NULL);
 #endif
+	printk("PL:msm_fb_add_devices(), done\n");
 }
 
 /**
@@ -7714,12 +7722,16 @@ static void __init semc_fuji_add_lcd_device(void)
 	int rc;
 	struct lcd_panel_platform_data *pdata;
 
+	printk("PL:semc_fuji_add_lcd_device()\n");
+
 	pdata = kmalloc(sizeof(struct lcd_panel_platform_data), GFP_KERNEL);
 
 	pdata->default_panels = default_panel_ids_r63306;
 	pdata->panels = panel_ids_r63306;
 	pdata->lcd_power = lcd_power;
 	pdata->lcd_reset = lcd_reset;
+
+	printk("PL:semc_fuji_add_lcd_device, lcd_power=%X\n", (unsigned int)lcd_power);
 
 	semc_fuji_lcd_device.dev.platform_data = pdata;
 
@@ -7774,6 +7786,7 @@ static struct msm_board_data msm8x60_fuji_board_data __initdata = {
 static void __init msm8x60_init(struct msm_board_data *board_data)
 {
 	uint32_t soc_platform_version;
+	printk("PL:msm8x60_init()\n");
 
 	pmic_reset_irq = PM8058_IRQ_BASE + PM8058_RESOUT_IRQ;
 	/*
@@ -7828,7 +7841,9 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 	/* Buses need to be initialized before early-device registration
 	 * to get the platform data for fabrics.
 	 */
+	printk("PL:msm8x60_init(), init buses\n");
 	msm8x60_init_buses();
+	printk("PL:msm8x60_init(), early devices\n");
 	platform_add_devices(early_devices, ARRAY_SIZE(early_devices));
 	/* CPU frequency control is not supported on simulated targets. */
 	acpuclk_init(&acpuclk_8x60_soc_data);
@@ -7858,6 +7873,8 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 	msm8x60_pm8901_dVdd_init();
 	platform_add_devices(asoc_devices,
 				ARRAY_SIZE(asoc_devices));
+
+	printk("PL:msm8x60_init(), fuji devices\n");
 	platform_add_devices(fuji_devices,
 			     ARRAY_SIZE(fuji_devices));
 
@@ -7883,7 +7900,7 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 #ifdef CONFIG_FB_MSM_MIPI_DSI_RENESAS_R63306
 	semc_fuji_add_lcd_device();
 #endif
-
+	printk("PL:msm8x60_init(), fb devices\n");
 	if (!machine_is_msm8x60_sim())
 		msm_fb_add_devices();
 	register_i2c_devices();
@@ -7906,6 +7923,7 @@ static void __init msm8x60_init(struct msm_board_data *board_data)
 #endif
 	msm8x60_multi_sdio_init();
 	bt_power_init();
+	printk("PL:msm8x60_init() done\n");
 }
 
 static void __init msm8x60_fuji_init(void)
