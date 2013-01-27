@@ -316,7 +316,11 @@ static void ion_handle_destroy(struct kref *kref)
 	/* XXX Can a handle be destroyed while it's map count is non-zero?:
 	   if (handle->map_cnt) unmap
 	 */
-	WARN_ON(handle->kmap_cnt || handle->dmap_cnt || handle->usermap_cnt);
+	// WARN_ON(handle->kmap_cnt || handle->dmap_cnt || handle->usermap_cnt);
+	if(handle->kmap_cnt || handle->dmap_cnt || handle->usermap_cnt) {
+	  printk("PL: ion handle free with kmap=%d, dmap=%d, user=%d\n",
+		 handle->kmap_cnt, handle->dmap_cnt, handle->usermap_cnt);
+	}
 	ion_buffer_put(handle->buffer);
 	if (!RB_EMPTY_NODE(&handle->node))
 		rb_erase(&handle->node, &handle->client->handles);
@@ -1474,17 +1478,24 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	case ION_IOC_ALLOC:
 	{
 		struct ion_allocation_data data;
+		printk("PL:ION_IOC_ALLOC\n");
 
-		if (copy_from_user(&data, (void __user *)arg, sizeof(data)))
+		if (copy_from_user(&data, (void __user *)arg, sizeof(data))) {
+		  printk("PL:ION_IOC_ALLOC, copy from user failed\n");
 			return -EFAULT;
+		}
 		data.handle = ion_alloc(client, data.len, data.align,
 					     data.flags);
 
-		if (IS_ERR_OR_NULL(data.handle))
+		if (IS_ERR_OR_NULL(data.handle)) {
+		  printk("PL:ION_IOC_ALLOC, alloc failed\n");
 			return -ENOMEM;
+		}
 
-		if (copy_to_user((void __user *)arg, &data, sizeof(data)))
+		if (copy_to_user((void __user *)arg, &data, sizeof(data))) {
+		  printk("PL:ION_IOC_ALLOC, copy_to_user failed\n");
 			return -EFAULT;
+		}
 		break;
 	}
 	case ION_IOC_ALLOC34:
@@ -1492,16 +1503,23 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		struct ion_allocation_data34 data;
 		printk("PL:ION_IOC_ALLOC34\n");
 
-		if (copy_from_user(&data, (void __user *)arg, sizeof(data)))
+		if (copy_from_user(&data, (void __user *)arg, sizeof(data))) {
+		  printk("PL:ION_IOC_ALLOC34, copy from user failed\n");
 			return -EFAULT;
+		}
 		data.handle = ion_alloc(client, data.len, data.align,
 					     data.flags);
 
-		if (IS_ERR_OR_NULL(data.handle))
+		if (IS_ERR_OR_NULL(data.handle)) {
+		  printk("PL:ION_IOC_ALLOC34, alloc failed(len=%X, aligh=%d, flags=%X\n", 
+			 (unsigned)data.len, data.align, (unsigned)data.flags);
 			return -ENOMEM;
+		}
 
-		if (copy_to_user((void __user *)arg, &data, sizeof(data)))
+		if (copy_to_user((void __user *)arg, &data, sizeof(data))) {
+		  printk("PL:ION_IOC_ALLOC34, copy_to_user failed\n");
 			return -EFAULT;
+		}
 		break;
 	}
 
@@ -2076,6 +2094,9 @@ struct ion_device *ion_device_create(long (*custom_ioctl)
 {
 	struct ion_device *idev;
 	int ret;
+
+	printk("PL:ION IOC: ION_IOC_ALLOC=0x%08X ION_IOC_ALLOC34=0x%08X\n",
+	       ION_IOC_ALLOC, ION_IOC_ALLOC34);
 
 	idev = kzalloc(sizeof(struct ion_device), GFP_KERNEL);
 	if (!idev)
